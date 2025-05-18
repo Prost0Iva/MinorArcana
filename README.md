@@ -1,0 +1,2 @@
+# MinorArcana
+Mod for Balatro
