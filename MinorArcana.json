@@ -1,0 +1,10 @@
+{
+	"id": "MinorArcana",
+	"name": "MinorArcana",
+	"display_name": "MinorArcana",
+	"author": ["Iva"],
+	"description": "",
+	"prefix": "ma",
+	"main_file": "MinorArcana.lua",
+	"version": "0.3"
+}
