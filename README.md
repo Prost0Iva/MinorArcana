@@ -1,4 +1,4 @@
-<img width="364" height="181" alt="image" src="https://github.com/user-attachments/assets/904daa77-4d09-4335-9d93-097cb6f1f00c" /># MinorArcana
+# MinorArcana
 
 ### Requires [Steamodded](https://github.com/Steamodded/smods/wiki) !
 
