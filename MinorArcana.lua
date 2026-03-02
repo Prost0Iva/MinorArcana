@@ -574,13 +574,13 @@ SMODS.Consumable{ --Knight of Wands
         end
 
         for i = 1, #adjacent_cards do --теперь поочерёдно улучшаем её соседей, до каменных
-            G.E_MANAGER:add_event(Event({trigger = 'after',delay = 0.15,func = function() adjacent_cards[i]:flip();play_sound('card1', percent);G.hand.highlighted[i]:juice_up(0.3, 0.3);return true end }))
+            G.E_MANAGER:add_event(Event({trigger = 'after',delay = 0.15,func = function() adjacent_cards[i]:flip();play_sound('card1', percent);adjacent_cards[i]:juice_up(0.3, 0.3);return true end }))
         end
         for i = 1, #adjacent_cards do
             G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.4,func = function () adjacent_cards[i]:set_ability(G.P_CENTERS.m_stone) return true end }))
         end
         for i = 1, #adjacent_cards do
-            G.E_MANAGER:add_event(Event({trigger = 'after',delay = 0.15,func = function() adjacent_cards[i]:flip();play_sound('card1', percent);G.hand.highlighted[i]:juice_up(0.3, 0.3);return true end }))
+            G.E_MANAGER:add_event(Event({trigger = 'after',delay = 0.15,func = function() adjacent_cards[i]:flip();play_sound('card1', percent);adjacent_cards[i]:juice_up(0.3, 0.3);return true end }))
         end
 
         G.E_MANAGER:add_event(Event({ --уничтожаем выбранную карту

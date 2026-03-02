@@ -3,8 +3,8 @@
 	"name": "MinorArcana",
 	"display_name": "MinorArcana",
 	"author": ["Iva"],
-	"description": "",
+	"description": "Mod for Balatro that adds tarot cards of minor arcana",
 	"prefix": "ma",
 	"main_file": "MinorArcana.lua",
-	"version": "0.7"
+	"version": "0.71"
 }
