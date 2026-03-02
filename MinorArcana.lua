@@ -51,7 +51,7 @@ SMODS.Consumable{ --Ace of Cups
     key = 'acecup',
     unlocked = true,
     discovered = false,
-    cost = 2,
+    cost = 3,
     pos = {x = 0, y = 0},
 
     loc_vars = function (self, info_queue, card)
@@ -74,7 +74,7 @@ SMODS.Consumable{ --Page of Cups
     key = 'pagecup',
     unlocked = true,
     discovered = false,
-    cost = 2,
+    cost = 3,
     pos = {x = 1, y = 0},
 
     config = {
@@ -85,7 +85,12 @@ SMODS.Consumable{ --Page of Cups
     },
     
     loc_vars = function (self, info_queue, card)
-        return {vars = {card.ability.extra.dollar_per_tag, self.config.max_dollar, math.min(G.GAME.tags_num * card.ability.extra.dollar_per_tag, self.config.max_dollar)}}
+        return {vars = {
+            card.ability.extra.dollar_per_tag,
+            self.config.max_dollar,
+            math.min(G.GAME.tags_num * card.ability.extra.dollar_per_tag,
+            self.config.max_dollar
+        )}}
     end,
 
     use = function (self, card, area, copier)
@@ -103,7 +108,7 @@ SMODS.Consumable{ --Knight of Cups
     key = 'knightcup',
     unlocked = true,
     discovered = false,
-    cost = 2,
+    cost = 3,
     pos = {x = 2, y = 0},
 
     config = {
@@ -117,7 +122,7 @@ SMODS.Consumable{ --Knight of Cups
         return {vars = {(G.GAME.probabilities.normal or 1), card.ability.extra}}
     end,
 
-    use = function (self, card, area, copier) --UJPFEAQP
+    use = function (self, card, area, copier)
     local used_tarot = copier or card
         if pseudorandom('knightcup') < G.GAME.probabilities.normal / card.ability.extra then --срабатывание шанса 1 к 3
             local what_tag = math.random(3) --рандомный выбор тэга
@@ -161,7 +166,7 @@ SMODS.Consumable{ --Queen of Cups
     key = 'queencup',
     unlocked = true,
     discovered = false,
-    cost = 2,
+    cost = 3,
     pos = {x = 3, y = 0},
 
     loc_vars = function (self, info_queue, card)
@@ -194,7 +199,7 @@ SMODS.Consumable{ --King of Cups
     key = 'kingcup',
     unlocked = true,
     discovered = false,
-    cost = 2,
+    cost = 3,
     pos = {x = 4, y = 0},
 
     loc_vars = function (self, info_queue, card)
@@ -216,7 +221,7 @@ SMODS.Consumable{ --Ace of Pentacles
     key = 'acepen',
     unlocked = true,
     discovered = false,
-    cost = 2,
+    cost = 3,
     pos = {x = 0, y = 1},
 
     config = {
@@ -277,7 +282,7 @@ SMODS.Consumable{ --Page of Pentacles
     key = 'pagepen',
     unlocked = true,
     discovered = false,
-    cost = 2,
+    cost = 3,
     pos = {x = 1, y = 1},
 
     config = {
@@ -319,7 +324,7 @@ SMODS.Consumable{ --Knight of Pentacles
     key = 'knightpen',
     unlocked = true,
     discovered = false,
-    cost = 2,
+    cost = 3,
     pos = {x = 2, y = 1},
 
     use = function (self, card, area, copier)
@@ -352,7 +357,7 @@ SMODS.Consumable{ --Queen of Pentacles
     key = 'queenpen',
     unlocked = true,
     discovered = false,
-    cost = 2,
+    cost = 3,
     pos = {x = 3, y = 1},
 
     config = {
@@ -364,7 +369,7 @@ SMODS.Consumable{ --Queen of Pentacles
         return {vars = {(G.GAME.probabilities.normal or 1), card.ability.extra}}
     end,
 
-    use = function (self, card, area, copier) --UJPFEAQP
+    use = function (self, card, area, copier)
     local used_tarot = copier or card
         if pseudorandom('queenpen') < G.GAME.probabilities.normal / card.ability.extra then
             add_tag(Tag('tag_coupon'))
@@ -399,7 +404,7 @@ SMODS.Consumable{ --King of Pentacles
     key = 'kingpen',
     unlocked = true,
     discovered = false,
-    cost = 2,
+    cost = 3,
     pos = {x = 4, y = 1},
 
     loc_vars = function (self, info_queue, card)
@@ -416,6 +421,283 @@ SMODS.Consumable{ --King of Pentacles
 
     can_use = function (self, card)
         return true
+    end
+
+}
+
+SMODS.Consumable{ --Ace of Wands
+    set = 'Tarot',
+    atlas = 'ma_tarot',
+    key = 'acewand',
+    unlocked = true,
+    discovered = false,
+    cost = 3,
+    pos = {x = 0, y = 2},
+
+    config = {
+        extra = 4
+    },
+
+    loc_vars = function (self, info_queue, card)
+        return {vars = {card.ability.extra}}
+    end,
+
+    use = function (self, card, area, copier)
+        for i=1, #G.hand.highlighted do --переворачиваем выбранные карты
+            G.E_MANAGER:add_event(Event({trigger = 'after',delay = 0.15,func = function() G.hand.highlighted[i]:flip();play_sound('card1', percent);G.hand.highlighted[i]:juice_up(0.3, 0.3);return true end }))
+        end
+        for i = 1, #G.hand.highlighted do --даём им случайное улучшение
+            G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.4,
+            func = function ()
+                G.hand.highlighted[i]:set_ability(G.P_CENTERS[SMODS.poll_enhancement({guaranteed = true, key = 'wands'})])
+                return true 
+            end 
+          }))
+        end
+        for i=1, #G.hand.highlighted do --переворачиваем обратно
+            G.E_MANAGER:add_event(Event({trigger = 'after',delay = 0.15,func = function() G.hand.highlighted[i]:flip();play_sound('card1', percent);G.hand.highlighted[i]:juice_up(0.3, 0.3);return true end }))
+        end
+        G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.2,func = function() G.hand:unhighlight_all(); return true end })) --делаем все карты в руке не выделенными
+        delay(0.5)
+    end,
+
+    can_use = function(self, card)
+        if G.hand and (#G.hand.highlighted >= 1) and (#G.hand.highlighted <= card.ability.extra) then
+            return true
+        end
+    end
+
+}
+
+SMODS.Consumable{ --Page of Wands
+    set = 'Tarot',
+    atlas = 'ma_tarot',
+    key = 'pagewand',
+    unlocked = true,
+    discovered = false,
+    cost = 3,
+    pos = {x = 1, y = 2},
+
+    config = {
+        extra = {
+            max_highlight = 3,
+            chance = 4
+        }
+    },
+
+    loc_vars = function (self, info_queue, card)
+        info_queue[#info_queue+1] = G.P_CENTERS.m_glass;
+        return {vars = {
+            (G.GAME.probabilities.normal or 1),
+            card.ability.extra.chance,
+            card.ability.extra.max_highlight
+        }}
+    end,
+
+    use = function (self, card, area, copier)
+        local used_tarot = copier or card
+        if pseudorandom('pagewan') < G.GAME.probabilities.normal / card.ability.extra.chance then
+            for i=1, #G.hand.highlighted do
+                G.E_MANAGER:add_event(Event({trigger = 'after',delay = 0.15,func = function() G.hand.highlighted[i]:flip();play_sound('card1', percent);G.hand.highlighted[i]:juice_up(0.3, 0.3);return true end }))
+            end
+            for i = 1, #G.hand.highlighted do
+                G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.4,
+                func = function ()
+                    G.hand.highlighted[i]:set_ability(G.P_CENTERS.m_glass)
+                    return true end }))
+            end
+            for i=1, #G.hand.highlighted do
+                G.E_MANAGER:add_event(Event({trigger = 'after',delay = 0.15,func = function() G.hand.highlighted[i]:flip();play_sound('card1', percent);G.hand.highlighted[i]:juice_up(0.3, 0.3);return true end }))
+            end
+            G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.2,func = function() G.hand:unhighlight_all(); return true end }))
+            delay(0.5)
+        else
+            G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.4, func = function()
+                attention_text({
+                    text = localize('k_nope_ex'),
+                    scale = 1.3, 
+                    hold = 1.4,
+                    major = used_tarot,
+                    backdrop_colour = G.C.SECONDARY_SET.Tarot,
+                    align = (G.STATE == G.STATES.TAROT_PACK or G.STATE == G.STATES.SPECTRAL_PACK) and 'tm' or 'cm',
+                    offset = {x = 0, y = (G.STATE == G.STATES.TAROT_PACK or G.STATE == G.STATES.SPECTRAL_PACK) and -0.2 or 0},
+                    silent = true
+                    })
+                    G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.06*G.SETTINGS.GAMESPEED, blockable = false, blocking = false, func = function()
+                        play_sound('tarot2', 0.76, 0.4);return true end}))
+                    play_sound('tarot2', 1, 0.4)
+                    used_tarot:juice_up(0.3, 0.5)
+            return true end }))
+        end
+    end,
+
+    can_use = function(self, card)
+        if G.hand and (#G.hand.highlighted >= 1) and (#G.hand.highlighted <= card.ability.extra.max_highlight) then
+            return true
+        end
+    end
+
+}
+
+SMODS.Consumable{ --Knight of Wands
+    set = 'Tarot',
+    atlas = 'ma_tarot',
+    key = 'knightwand',
+    unlocked = true,
+    discovered = false,
+    cost = 3,
+    pos = {x = 2, y = 2},
+
+    config = {
+        max_highlight = 1
+    },
+
+    loc_vars = function (self, info_queue, card)
+        info_queue[#info_queue+1] = G.P_CENTERS.m_stone;
+        return {vars = {
+            self.config.max_highlight
+        }}
+    end,
+
+    use = function (self, card, area, copier)
+        local adjacent_cards = {} --ищем в картах руки расположение выбранной нами карты и её соседей и добавляем их в массив
+        for i = 1, #G.hand.cards do
+            if G.hand.cards[i] == G.hand.highlighted[1] then 
+                    if G.hand.cards[i-1] then
+                        adjacent_cards[#adjacent_cards + 1] = G.hand.cards[i-1]
+                    end
+                    if G.hand.cards[i+1] then
+                        adjacent_cards[#adjacent_cards + 1] = G.hand.cards[i+1]
+                    end
+                break 
+            end
+        end
+
+        for i = 1, #adjacent_cards do --теперь поочерёдно улучшаем её соседей, до каменных
+            G.E_MANAGER:add_event(Event({trigger = 'after',delay = 0.15,func = function() adjacent_cards[i]:flip();play_sound('card1', percent);G.hand.highlighted[i]:juice_up(0.3, 0.3);return true end }))
+        end
+        for i = 1, #adjacent_cards do
+            G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.4,func = function () adjacent_cards[i]:set_ability(G.P_CENTERS.m_stone) return true end }))
+        end
+        for i = 1, #adjacent_cards do
+            G.E_MANAGER:add_event(Event({trigger = 'after',delay = 0.15,func = function() adjacent_cards[i]:flip();play_sound('card1', percent);G.hand.highlighted[i]:juice_up(0.3, 0.3);return true end }))
+        end
+
+        G.E_MANAGER:add_event(Event({ --уничтожаем выбранную карту
+                trigger = 'after',
+                delay = 0.2,
+                func = function() 
+                    local highlighted_card = G.hand.highlighted[1]
+                    if highlighted_card.ability.name == 'Glass Card' then 
+                        highlighted_card:shatter()
+                    else
+                        highlighted_card:start_dissolve()
+                    end
+        return true end }))
+    end,
+
+    can_use = function(self, card)
+        if G.hand and (#G.hand.highlighted >= 1) and (#G.hand.highlighted <= self.config.max_highlight) then
+            return true
+        end
+    end
+
+}
+
+SMODS.Consumable{ --Queen of Wands
+    set = 'Tarot',
+    atlas = 'ma_tarot',
+    key = 'queenwand',
+    unlocked = true,
+    discovered = false,
+    cost = 3,
+    pos = {x = 3, y = 2},
+
+    config = {
+        extra = 1
+    },
+
+    loc_vars = function (self, info_queue, card)
+        info_queue[#info_queue+1] = G.P_CENTERS.m_gold;
+        return {vars = {
+            card.ability.extra
+        }}
+    end,
+
+    use = function (self, card, area, copier)
+        for i=1, #G.hand.highlighted do
+                G.E_MANAGER:add_event(Event({trigger = 'after',delay = 0.15,func = function() G.hand.highlighted[i]:flip();play_sound('card1', percent);G.hand.highlighted[i]:juice_up(0.3, 0.3);return true end }))
+        end
+        for i=1, #G.hand.highlighted do
+            G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.4,func = function () G.hand.highlighted[i]:set_ability(G.P_CENTERS.m_gold) return true end }))
+            G.E_MANAGER:add_event(Event({trigger = 'after',delay = 0.1,func = function() --ивент на повышение ранга карты (взят прямиком из кода карты таро Сила)
+                local card = G.hand.highlighted[i]
+                local suit_prefix = string.sub(card.base.suit, 1, 1)..'_'
+                local rank_suffix = card.base.id == 14 and 2 or math.min(card.base.id+1, 14)
+                if rank_suffix < 10 then rank_suffix = tostring(rank_suffix)
+                elseif rank_suffix == 10 then rank_suffix = 'T'
+                elseif rank_suffix == 11 then rank_suffix = 'J'
+                elseif rank_suffix == 12 then rank_suffix = 'Q'
+                elseif rank_suffix == 13 then rank_suffix = 'K'
+                elseif rank_suffix == 14 then rank_suffix = 'A'
+                end
+                card:set_base(G.P_CARDS[suit_prefix..rank_suffix])
+            return true end }))
+        end 
+        for i=1, #G.hand.highlighted do
+                G.E_MANAGER:add_event(Event({trigger = 'after',delay = 0.15,func = function() G.hand.highlighted[i]:flip();play_sound('card1', percent);G.hand.highlighted[i]:juice_up(0.3, 0.3);return true end }))
+        end
+    end,
+
+    can_use = function(self, card)
+        if G.hand and (#G.hand.highlighted >= 1) and (#G.hand.highlighted <= card.ability.extra) then
+            return true
+        end
+    end
+
+}
+
+SMODS.Consumable{ --King of Wands
+    set = 'Tarot',
+    atlas = 'ma_tarot',
+    key = 'kingwand',
+    unlocked = true,
+    discovered = false,
+    cost = 3,
+    pos = {x = 4, y = 2},
+
+    config = {
+        extra = 2
+    },
+
+    loc_vars = function (self, info_queue, card)
+        info_queue[#info_queue+1] = G.P_CENTERS.m_steel;
+        info_queue[#info_queue+1] = G.P_CENTERS.m_wild;
+        return {vars = {
+            card.ability.extra
+        }}
+    end,
+
+    use = function (self, card, area, copier)
+        for i=1, #G.hand.highlighted do
+                G.E_MANAGER:add_event(Event({trigger = 'after',delay = 0.15,func = function() G.hand.highlighted[i]:flip();play_sound('card1', percent);G.hand.highlighted[i]:juice_up(0.3, 0.3);return true end }))
+        end
+        for i=1, #G.hand.highlighted do
+            if G.hand.highlighted[i]:is_face() then
+                G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.4,func = function () G.hand.highlighted[i]:set_ability(G.P_CENTERS.m_steel) return true end }))
+            else
+                G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.4,func = function () G.hand.highlighted[i]:set_ability(G.P_CENTERS.m_wild) return true end }))
+            end
+        end 
+        for i=1, #G.hand.highlighted do
+                G.E_MANAGER:add_event(Event({trigger = 'after',delay = 0.15,func = function() G.hand.highlighted[i]:flip();play_sound('card1', percent);G.hand.highlighted[i]:juice_up(0.3, 0.3);return true end }))
+        end
+    end,
+
+    can_use = function(self, card)
+        if G.hand and (#G.hand.highlighted >= 1) and (#G.hand.highlighted <= card.ability.extra) then
+            return true
+        end
     end
 
 }

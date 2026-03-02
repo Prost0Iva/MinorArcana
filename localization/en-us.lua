@@ -77,6 +77,45 @@ return {
 					"Creates a {C:dark_edition}Negative",
 					"{C:dark_edition}Perishable Credit Card"
 				},
+			},
+			c_ma_acewand = {
+				name = "Ace of Wands",
+				text = {
+					"Enhances {C:attention}#1#",
+					"selected cards"
+				},
+			},
+			c_ma_pagewand = {
+				name = "Page of Wands",
+				text = {
+					"{C:green}#1# in #2#{} chance to",
+					"enhances {C:attention}#3#",
+					"selected cards to {C:attention}Glass Card"
+				},
+			},
+			c_ma_knightwand = {
+				name = "Knight of Wands",
+				text = {
+					"Destroys {C:attention}#1#{} selected card",
+					"Enhances adjacent cards to",
+					"{C:attention}Stone Cards"
+				},
+			},
+			c_ma_queenwand = {
+				name = "Queen of Wands",
+				text = {
+					"Increases rank of {C:attention}#1#",
+					"selected card and",
+					"enhances into a {C:attention}Gold Card"
+				},
+			},
+			c_ma_kingwand = {
+				name = "King of Wands",
+				text = {
+					"Enhances {C:attention}#1#{} selected",
+					"{C:attention}face{} cards to {C:attention}Steel Cards{}",
+					"other selected cards to {C:attention}Wild Cards"
+				},
 			}
 		}
 	}
