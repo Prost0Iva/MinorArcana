@@ -14,6 +14,7 @@
 --Инициализация файлов текстур
 ------------------------------
 SMODS.Atlas({key = 'ma_tarot', path = 'Tarots.png', px = 71, py = 95})
+SMODS.Atlas({key = 'ma_spectral', path = 'Spectral.png', px = 71, py = 95})
 
 --------------------------------------
 --Функции, которые используются,
@@ -24,6 +25,7 @@ function Game:init_game_object() --Хук на добавление своих �
 	local g = igo(self)
 	g.tags_num = 0
     g.old_tags_num = 0
+    g.last_sold_planet = nil
 	return g
 end
 
@@ -40,6 +42,15 @@ function Game:update(dt) --Хук на выполнение каждый игр�
     end
 
     upd(self, dt)
+end
+
+local sold_cards = Card.sell_card
+function Card:sell_card()
+	if self.config.center.set == 'Planet' then --Добавляю в код продажи кард запоминание последней проданной планеты
+        G.GAME.last_sold_planet = self.config.center_key
+    end
+    
+	sold_cards(self)
 end
 
 ----------------
@@ -412,11 +423,11 @@ SMODS.Consumable{ --King of Pentacles
     end,
 
     use = function (self, card, area, copier)
-        local card = create_card("Joker", G.jokers, nil, nil, nil, nil, "j_credit_card")
-        card:set_edition('e_negative', true)
-        card:add_sticker('perishable', true)
-        card:add_to_deck()
-		G.jokers:emplace(card)
+        local credit_card = create_card("Joker", G.jokers, nil, nil, nil, nil, "j_credit_card")
+        credit_card:set_edition('e_negative', true)
+        credit_card:add_sticker('perishable', true)
+        credit_card:add_to_deck()
+		G.jokers:emplace(credit_card)
     end,
 
     can_use = function (self, card)
@@ -698,6 +709,480 @@ SMODS.Consumable{ --King of Wands
         if G.hand and (#G.hand.highlighted >= 1) and (#G.hand.highlighted <= card.ability.extra) then
             return true
         end
+    end
+
+}
+
+SMODS.Consumable{ --Ace of Swords
+    set = 'Tarot',
+    atlas = 'ma_tarot',
+    key = 'acesword',
+    unlocked = true,
+    discovered = false,
+    cost = 3,
+    pos = {x = 0, y = 3},
+
+    config = {
+        extra = 2
+    },
+
+    loc_vars = function (self, info_queue, card)
+    end,
+
+    use = function (self, card, area, copier)
+        local now_hand, planet, smallest = nil, nil, 999999 --перебираем все руки и ищем наименее часто использованную
+                                                            --(как показали тесты: если рук не разыгрывалось вообще, то даёт карты старшей карты,
+                                                            --а если развгранное количество одинаковое - той что разыгрывалась последний раз)
+        for k, v in ipairs(G.handlist) do
+            if G.GAME.hands[v].visible and G.GAME.hands[v].played < smallest and G.GAME.hands[v].played ~= 0 then
+                now_hand = v
+                smallest = G.GAME.hands[v].played
+            end
+        end
+        if now_hand then
+            for k, v in pairs(G.P_CENTER_POOLS.Planet) do
+                if v.config.hand_type == now_hand then
+                    planet = v.key
+                end
+            end
+        end
+
+        for i = 1, math.min(card.ability.extra, G.consumeables.config.card_limit - #G.consumeables.cards) do --создаем карты планет, в зависимости от свободного места под расходники
+            G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.4, func = function()
+                if G.consumeables.config.card_limit > #G.consumeables.cards then
+                    play_sound('timpani')
+                    local planet_card = create_card('Planet', G.consumeables, nil, nil, nil, nil, planet)
+                    planet_card:add_to_deck()
+                    G.consumeables:emplace(planet_card)
+                    card:juice_up(0.3, 0.5)
+                end
+            return true end }))
+        end
+        delay(0.6)
+    end,
+
+    can_use = function()
+        return true
+    end
+
+}
+
+SMODS.Consumable{ --Page of Swords
+    set = 'Tarot',
+    atlas = 'ma_tarot',
+    key = 'pagesword',
+    unlocked = true,
+    discovered = false,
+    cost = 3,
+    pos = {x = 1, y = 3},
+
+    config = {
+        extra = 1
+    },
+
+    loc_vars = function (self, info_queue, card)
+    end,
+
+    use = function (self, card, area, copier)
+        local destroed_val = 0 --Уничтожаем выбранные карты и считаем их количество
+        G.E_MANAGER:add_event(Event({
+            trigger = 'after',
+            delay = 0.2,
+            func = function() 
+                for i=#G.hand.highlighted, 1, -1 do
+                    destroed_val = destroed_val + 1
+                    local destroing_card = G.hand.highlighted[i]
+                    if destroing_card.ability.name == 'Glass Card' then 
+                        destroing_card:shatter()
+                    else
+                        destroing_card:start_dissolve()
+                    end
+                end
+            return true end }))
+        
+        local now_hand, planet, biggest = nil, nil, 0 --Ищем наиболее часто играемую руку и даем её столько раз, сколько кард уничтожили
+        for k, v in ipairs(G.handlist) do
+            if G.GAME.hands[v].visible and G.GAME.hands[v].played > biggest and G.GAME.hands[v].played ~= 0 then
+                now_hand = v
+                biggest = G.GAME.hands[v].played
+            end
+        end
+        if now_hand then
+            for k, v in pairs(G.P_CENTER_POOLS.Planet) do
+                if v.config.hand_type == now_hand then
+                    planet = v.key
+                end
+            end
+        end
+        G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.4, func = function()
+            for i = 1, math.min(destroed_val, G.consumeables.config.card_limit - #G.consumeables.cards) do
+                if G.consumeables.config.card_limit > #G.consumeables.cards then
+                    play_sound('timpani')
+                    local planet_card = create_card('Planet', G.consumeables, nil, nil, nil, nil, planet)
+                    planet_card:add_to_deck()
+                    G.consumeables:emplace(planet_card)
+                    card:juice_up(0.3, 0.5)
+                end
+            end
+        return true end }))
+    end,
+
+    can_use = function(self, card)
+        if G.hand and (#G.hand.highlighted >= 1) and (#G.hand.highlighted <= card.ability.extra) then
+            return true
+        end
+    end
+
+}
+
+SMODS.Consumable{ --Knight of Swords
+    set = 'Tarot',
+    atlas = 'ma_tarot',
+    key = 'knightsword',
+    unlocked = true,
+    discovered = false,
+    cost = 3,
+    pos = {x = 2, y = 3},
+
+    config = {
+        extra = 2
+    },
+
+    loc_vars = function (self, info_queue, card)
+    end,
+
+    use = function (self, card, area, copier)
+
+        G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.4, func = function() --Ивент на создание последней проданой карты планет
+            if G.consumeables.config.card_limit > #G.consumeables.cards then           --Чтобы понять откуда я беру последнюю проданую карту см. строку 46-50
+                play_sound('timpani')
+                local planet_card = create_card('Planet', G.consumeables, nil, nil, nil, nil, G.GAME.last_sold_planet)
+                planet_card:add_to_deck()
+                G.consumeables:emplace(planet_card)
+                card:juice_up(0.3, 0.5)
+            end
+            return true end }))
+        delay(0.6)
+        
+        if pseudorandom('knightsword') < G.GAME.probabilities.normal / card.ability.extra then --Ну и дублирую эффект с шансом
+            G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.4, func = function()
+                if G.consumeables.config.card_limit > #G.consumeables.cards then
+                    play_sound('timpani')
+                    local planet_card = create_card('Planet', G.consumeables, nil, nil, nil, nil, G.GAME.last_sold_planet)
+                    planet_card:add_to_deck()
+                    G.consumeables:emplace(planet_card)
+                    card:juice_up(0.3, 0.5)
+                end
+                return true end }))
+            delay(0.6)
+        else
+            local used_tarot = copier or card
+            G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.4, func = function()
+                attention_text({
+                    text = localize('k_nope_ex'),
+                    scale = 1.3, 
+                    hold = 1.4,
+                    major = used_tarot,
+                    backdrop_colour = G.C.SECONDARY_SET.Tarot,
+                    align = (G.STATE == G.STATES.TAROT_PACK or G.STATE == G.STATES.SPECTRAL_PACK) and 'tm' or 'cm',
+                    offset = {x = 0, y = (G.STATE == G.STATES.TAROT_PACK or G.STATE == G.STATES.SPECTRAL_PACK) and -0.2 or 0},
+                    silent = true
+                    })
+                    G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.06*G.SETTINGS.GAMESPEED, blockable = false, blocking = false, func = function()
+                        play_sound('tarot2', 0.76, 0.4);return true end}))
+                    play_sound('tarot2', 1, 0.4)
+                    used_tarot:juice_up(0.3, 0.5)
+            return true end }))
+        end
+    end,
+
+    can_use = function()
+        if G.GAME.last_sold_planet then return true end
+    end
+
+}
+
+SMODS.Consumable{ --Queen of Swords
+    set = 'Tarot',
+    atlas = 'ma_tarot',
+    key = 'queensword',
+    unlocked = true,
+    discovered = false,
+    cost = 3,
+    pos = {x = 3, y = 3},
+
+    config = {
+        extra = {
+            chance_up = 3,
+            chance_down = 4,
+            lvl = 2
+        }
+    },
+
+    loc_vars = function (self, info_queue, card)
+    end,
+
+    use = function (self, card, area, copier)
+        if pseudorandom('queensword') < card.ability.extra.chance_up / card.ability.extra.chance_down then --Перебираем все руки и берём рандомную, ур которой больше 2
+            local hand = nil                                                                               --Далее с помощью функции SMODS.smart_level_up_hand уменьшаем уровень этой руки
+            for k, v in ipairs(G.handlist) do                                                              --На самом деле я хотел сделать так, чтобы ур руки мог быть отрицательным, но код игры не позволяет уменьшить ур уже отрицательной руки :(
+                if G.GAME.hands[v].visible and G.GAME.hands[v].level > 2 and pseudorandom('downhand') > .4 then
+                    hand = v
+                end
+            end
+            if not hand and G.GAME.hands["High Card"].level > 2 then
+                hand = "High Card"
+            end
+            if hand then
+                SMODS.smart_level_up_hand(card, hand, false, -(card.ability.extra.lvl))
+            end
+        else
+            local used_tarot = copier or card
+            G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.4, func = function()
+                attention_text({
+                    text = localize('k_nope_ex'),
+                    scale = 1.3, 
+                    hold = 1.4,
+                    major = used_tarot,
+                    backdrop_colour = G.C.SECONDARY_SET.Tarot,
+                    align = (G.STATE == G.STATES.TAROT_PACK or G.STATE == G.STATES.SPECTRAL_PACK) and 'tm' or 'cm',
+                    offset = {x = 0, y = (G.STATE == G.STATES.TAROT_PACK or G.STATE == G.STATES.SPECTRAL_PACK) and -0.2 or 0},
+                    silent = true
+                    })
+                    G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.06*G.SETTINGS.GAMESPEED, blockable = false, blocking = false, func = function()
+                        play_sound('tarot2', 0.76, 0.4);return true end}))
+                    play_sound('tarot2', 1, 0.4)
+                    used_tarot:juice_up(0.3, 0.5)
+            return true end }))
+        end
+
+        local cosmo_card = create_card("Joker", G.jokers, nil, nil, nil, nil, "j_space")
+        cosmo_card:set_edition('e_negative', true)
+        cosmo_card:add_sticker('perishable', true)
+        cosmo_card:add_sticker('rental', true)
+        cosmo_card:add_to_deck()
+		G.jokers:emplace(cosmo_card)
+    end,
+
+    can_use = function()
+        return true
+    end
+
+}
+
+SMODS.Consumable{ --King of Swords
+    set = 'Tarot',
+    atlas = 'ma_tarot',
+    key = 'kingsword',
+    unlocked = true,
+    discovered = false,
+    cost = 3,
+    pos = {x = 4, y = 3},
+
+    config = {
+        extra = {
+            chanse = 5,
+            chanse_add = 3
+        }
+    },
+
+    loc_vars = function (self, info_queue, card)
+    end,
+
+    use = function (self, card, area, copier)
+        if pseudorandom('kingsword') < G.GAME.probabilities.normal / card.ability.extra.chanse then --Тут мы просто выдаем с шансом черную дыру и с другим шансом создаем её негативную копию
+            G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.4, func = function()
+                if G.consumeables.config.card_limit > #G.consumeables.cards then
+                    play_sound('timpani')
+                    local black_hole_card = create_card('Spectral', G.consumeables, nil, nil, nil, nil, "c_black_hole")
+                    black_hole_card:add_to_deck()
+                    G.consumeables:emplace(black_hole_card)
+                    card:juice_up(0.3, 0.5)
+                end
+                return true end }))
+            delay(0.6)
+            if pseudorandom('kingswordadd') < G.GAME.probabilities.normal / card.ability.extra.chanse_add then
+                G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.4, func = function()
+                    play_sound('timpani')
+                    local black_hole_card = create_card('Spectral', G.consumeables, nil, nil, nil, nil, "c_black_hole")
+                    black_hole_card:set_edition('e_negative', true)
+                    black_hole_card:add_to_deck()
+                    G.consumeables:emplace(black_hole_card)
+                    card:juice_up(0.3, 0.5)
+                    return true end }))
+                delay(0.6)
+            end
+        else
+            local used_tarot = copier or card
+            G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.4, func = function()
+                attention_text({
+                    text = localize('k_nope_ex'),
+                    scale = 1.3, 
+                    hold = 1.4,
+                    major = used_tarot,
+                    backdrop_colour = G.C.SECONDARY_SET.Tarot,
+                    align = (G.STATE == G.STATES.TAROT_PACK or G.STATE == G.STATES.SPECTRAL_PACK) and 'tm' or 'cm',
+                    offset = {x = 0, y = (G.STATE == G.STATES.TAROT_PACK or G.STATE == G.STATES.SPECTRAL_PACK) and -0.2 or 0},
+                    silent = true
+                    })
+                    G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.06*G.SETTINGS.GAMESPEED, blockable = false, blocking = false, func = function()
+                        play_sound('tarot2', 0.76, 0.4);return true end}))
+                    play_sound('tarot2', 1, 0.4)
+                    used_tarot:juice_up(0.3, 0.5)
+            return true end }))
+        end
+    end,
+
+    can_use = function()
+        return true
+    end
+
+}
+
+SMODS.Consumable{ --Cup
+    set = 'Spectral',
+    atlas = 'ma_spectral',
+    key = 'cup',
+
+    unlocked = false,
+    check_for_unlock = function(self, args)
+        if G.P_CENTERS["c_ma_acecup"].discovered and
+        G.P_CENTERS["c_ma_pagecup"].discovered and
+        G.P_CENTERS["c_ma_knightcup"].discovered and
+        G.P_CENTERS["c_ma_queencup"].discovered and
+        G.P_CENTERS["c_ma_kingcup"].discovered then
+            unlock_card(self)
+        end
+    end,
+
+    discovered = false,
+    cost = 4,
+    pos = {x = 0, y = 0},
+
+    config = {
+        extra = 8
+    },
+
+    loc_vars = function (self, info_queue, card)
+    end,
+
+    use = function (self, card, area, copier)
+        
+    end,
+
+    can_use = function()
+        return true
+    end
+
+}
+
+SMODS.Consumable{ --Pentacle
+    set = 'Spectral',
+    atlas = 'ma_spectral',
+    key = 'pentacle',
+
+    unlocked = false,
+    check_for_unlock = function(self, args)
+        if G.P_CENTERS["c_ma_acepen"].discovered and
+        G.P_CENTERS["c_ma_pagepen"].discovered and
+        G.P_CENTERS["c_ma_knightpen"].discovered and
+        G.P_CENTERS["c_ma_queenpen"].discovered and
+        G.P_CENTERS["c_ma_kingpen"].discovered then
+            unlock_card(self)
+        end
+    end,
+
+    discovered = false,
+    cost = 4,
+    pos = {x = 1, y = 0},
+
+    config = {
+        extra = 8
+    },
+
+    loc_vars = function (self, info_queue, card)
+    end,
+
+    use = function (self, card, area, copier)
+        
+    end,
+
+    can_use = function()
+        return true
+    end
+
+}
+
+SMODS.Consumable{ --Wand
+    set = 'Spectral',
+    atlas = 'ma_spectral',
+    key = 'wand',
+
+    unlocked = false,
+    check_for_unlock = function(self, args)
+        if G.P_CENTERS["c_ma_acewand"].discovered and
+        G.P_CENTERS["c_ma_pagewand"].discovered and
+        G.P_CENTERS["c_ma_knightwand"].discovered and
+        G.P_CENTERS["c_ma_queenwand"].discovered and
+        G.P_CENTERS["c_ma_kingwand"].discovered then
+            unlock_card(self)
+        end
+    end,
+
+    discovered = false,
+    cost = 4,
+    pos = {x = 2, y = 0},
+
+    config = {
+        extra = 8
+    },
+
+    loc_vars = function (self, info_queue, card)
+    end,
+
+    use = function (self, card, area, copier)
+        
+    end,
+
+    can_use = function()
+        return true
+    end
+
+}
+
+SMODS.Consumable{ --Sword
+    set = 'Spectral',
+    atlas = 'ma_spectral',
+    key = 'sword',
+
+    unlocked = false,
+    check_for_unlock = function(self, args)
+        if G.P_CENTERS["c_ma_acesword"].discovered and
+        G.P_CENTERS["c_ma_pagesword"].discovered and
+        G.P_CENTERS["c_ma_knightsword"].discovered and
+        G.P_CENTERS["c_ma_queensword"].discovered and
+        G.P_CENTERS["c_ma_kingsword"].discovered then
+            unlock_card(self)
+        end
+    end,
+
+    discovered = false,
+    cost = 4,
+    pos = {x = 3, y = 0},
+
+    config = {
+        extra = 8
+    },
+
+    loc_vars = function (self, info_queue, card)
+    end,
+
+    use = function (self, card, area, copier)
+        
+    end,
+
+    can_use = function()
+        return true
     end
 
 }
