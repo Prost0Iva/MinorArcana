@@ -13,8 +13,9 @@
 ------------------------------
 --Инициализация файлов текстур
 ------------------------------
-SMODS.Atlas({key = 'ma_tarot', path = 'Tarots.png', px = 71, py = 95})
+SMODS.Atlas({key = 'ma_tarot', path = 'Tarot.png', px = 71, py = 95})
 SMODS.Atlas({key = 'ma_spectral', path = 'Spectral.png', px = 71, py = 95})
+SMODS.Atlas({key = 'ma_seal', path = 'Seal.png', px = 71, py = 95})
 
 --------------------------------------
 --Функции, которые используются,
@@ -1045,7 +1046,7 @@ SMODS.Consumable{ --Cup
     key = 'cup',
 
     unlocked = false,
-    check_for_unlock = function(self, args)
+    check_for_unlock = function(self, args) --условия для разблокировки карты (сейчас необходимо найти все карты кубков в игре)
         if G.P_CENTERS["c_ma_acecup"].discovered and
         G.P_CENTERS["c_ma_pagecup"].discovered and
         G.P_CENTERS["c_ma_knightcup"].discovered and
@@ -1067,7 +1068,31 @@ SMODS.Consumable{ --Cup
     end,
 
     use = function (self, card, area, copier)
-        
+        local used_tarot, t_val = copier or card, 0
+        for k, v in pairs(G.P_TAGS) do --считаем количество тегов в игре
+            t_val = t_val + 1 
+        end
+        for k, v in ipairs(G.consumeables.cards) do --уничтожаем все расходники игрока
+            G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.4, func = function()
+                v:shatter()
+                play_sound('tarot2', 0.76, 0.4)
+                used_tarot:juice_up(0.3, 0.5)
+            ;return true end}))
+        end
+        for i = 1, card.ability.extra do --выдаем случайные тэги
+            local r, x = math.random(t_val), 1
+            for k, v in pairs(G.P_TAGS) do
+                if x == r then
+                    G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.4, func = function()
+                        add_tag(Tag(k))
+                        play_sound('tarot2', 0.76, 0.4)
+                        used_tarot:juice_up(0.3, 0.5)
+                    return true end}))
+                    break
+                end
+                x = x + 1
+            end
+        end
     end,
 
     can_use = function()
@@ -1097,14 +1122,41 @@ SMODS.Consumable{ --Pentacle
     pos = {x = 1, y = 0},
 
     config = {
-        extra = 8
+        extra = {
+            per_vouch = 9,
+            per_lvl = 1
+        }
     },
 
     loc_vars = function (self, info_queue, card)
+        
     end,
 
+
     use = function (self, card, area, copier)
-        
+        G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.4, func = function() --обнуляем деньги игрока
+            card:juice_up(0.3, 0.5)
+            if G.GAME.dollars ~= 0 then
+                ease_dollars(-G.GAME.dollars, true)
+            end
+            delay(0.4)
+        return true end }))
+
+        G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.4, func = function()
+            local lvl_val, vouch_val = 0, 0
+            for k, v in pairs(G.GAME.used_vouchers) do --считаем количество ваучеров игрока
+                    vouch_val = vouch_val + 1
+            end
+            for k, v in ipairs(G.handlist) do --считаем сумму уровней всех рук игрока (при условии что они не скрыты)
+                if G.GAME.hands[v].visible then
+                    lvl_val = lvl_val + G.GAME.hands[v].level
+                end
+            end
+            ease_dollars(card.ability.extra.per_lvl * lvl_val, true) --выдаем деньги за кажд ваучер и уровень
+            ease_dollars(card.ability.extra.per_vouch * vouch_val, true)
+            card:juice_up(0.3, 0.5)
+        return true end }))
+        delay(0.6)
     end,
 
     can_use = function()
@@ -1134,20 +1186,112 @@ SMODS.Consumable{ --Wand
     pos = {x = 2, y = 0},
 
     config = {
-        extra = 8
+        extra = 3
     },
 
     loc_vars = function (self, info_queue, card)
     end,
 
     use = function (self, card, area, copier)
+        for i = 1, #G.hand.cards do
+            G.E_MANAGER:add_event(Event({trigger = 'after',delay = 0.15,func = function() G.hand.cards[i]:flip();play_sound('card1', percent);G.hand.cards[i]:juice_up(0.3, 0.3);return true end }))
+        end
+
+        local to_destroy = {}
+        for k, v in ipairs(G.hand.cards) do
+            G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.4,func = function ()
+                local abil = nil
+                for k, v in pairs(G.P_CENTERS) do
+                    if G.P_CENTERS[k].name == G.hand.highlighted[1].ability.name then --ищем улучшение карты в таблице всех улучшений игры и выдаем его всем картам в руке 
+                        abil = v
+                        break
+                    end
+                end
+                G.hand.cards[k]:set_ability(abil)
+                G.hand.cards[k]:juice_up(0.3, 0.3)
+                if pseudorandom('wand') < G.GAME.probabilities.normal / card.ability.extra then --а также добавляем карты на которых сработал шанс в массив на удаление
+                    to_destroy[#to_destroy + 1] = G.hand.cards[k]
+                    card:juice_up(0.3, 0.3)
+                end
+            return true end }))
+        end
         
+        G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.1,func = function () --удаляем все карты массива
+            sendInfoMessage(#to_destroy)
+            for i = 0, #to_destroy do
+                if to_destroy[i] then
+                    G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.4,func = function ()
+                        to_destroy[i]:shatter()
+                        card:juice_up(0.3, 0.3)
+                    return true end }))
+                end
+            end
+        return true end }))
+
+        for i = 1, #G.hand.cards do
+            G.E_MANAGER:add_event(Event({trigger = 'after',delay = 0.15,func = function()
+                if G.hand.cards[i] then
+                    G.hand.cards[i]:flip()
+                    play_sound('card1', percent)
+                    G.hand.cards[i]:juice_up(0.3, 0.3)
+                end
+            return true end }))
+        end
     end,
 
     can_use = function()
-        return true
+        if G.hand and #G.hand.highlighted == 1 then
+            return true
+        end
     end
 
+}
+
+SMODS.Seal{ --Stellar Seal
+    key = 'stellar_seal',
+    atlas = 'ma_seal',
+    pos = {x = 0, y = 0},
+    config = {
+        extra = 3
+    },
+    calculate = function(self, card, context)
+        if context.end_of_round and context.cardarea == G.hand and context.playing_card_end_of_round --ВОТ ТУТ МЫ ПИШЕМ КОНТЕКСТ
+        then
+            return { func = function() --Я ООООЧЕНЬ ДОЛГО НЕ ПОНИМАЛ, ПОЧЕМУ МИМ НЕ РАБОТАЕТ С МОЕЙ ПЕЧАТЬЮ, ТАК ВОТ, ДЕЛО В ТОМ, ЧТО, ЧТОБЫ ЧТОТО СЧИТАЛОСЬ ЭФФЕКТОМ КАРТЫ НАДО НЕ ПРОСТО ВЫЗЫВАТЬ, А ВОЗВРАЩАТЬ ФУНКЦИЮ И ЭТО КАЗАЛОСЬ БЫ ТАК ПРОСТО, НО Я НА ПОНИМАНИЕ ЭТОГО ПОТРАТИЛ 2 ДНЯ............ я устал..... я даже за это деег не получу.... а ещё это никто не прочитает.. я пошёл плакать
+                card_eval_status_text(card, 'extra', nil, nil, nil, {message = localize('k_plus_planet'), colour = G.C.SECONDARY_SET.Planet})
+                G.E_MANAGER:add_event(Event({ trigger = 'after', delay = 0.0, func = (function()
+                    if #G.consumeables.cards + G.GAME.consumeable_buffer < G.consumeables.config.card_limit then --в конце раунда создает карту планеты последней сыграной руки
+                        if G.GAME.last_hand_played then
+                            local planet = nil
+                            for k, v in pairs(G.P_CENTER_POOLS.Planet) do
+                                if v.config.hand_type == G.GAME.last_hand_played then
+                                    planet = v.key
+                                end
+                            end
+                            local planet_card = create_card('Planet', G.consumeables, nil, nil, nil, nil, planet)
+                            planet_card:add_to_deck()
+                            G.consumeables:emplace(planet_card)
+                        end
+                    end
+                return true end)}))
+                G.E_MANAGER:add_event(Event({ trigger = 'before', delay = 0, func = (function()
+                    if pseudorandom('stellar') < G.GAME.probabilities.normal / self.config.extra then
+                        if G.GAME.last_hand_played then
+                            local planet = nil
+                            for k, v in pairs(G.P_CENTER_POOLS.Planet) do
+                                if v.config.hand_type == G.GAME.last_hand_played then
+                                    planet = v.key
+                                end
+                            end
+                            local add_planet_card = create_card('Planet', G.consumeables, nil, nil, nil, nil, planet)
+                            add_planet_card:set_edition('e_negative', true)
+                            add_planet_card:add_to_deck()
+                            G.consumeables:emplace(add_planet_card)
+                        end
+                    end
+            return true end)})) end }
+        end
+    end,
 }
 
 SMODS.Consumable{ --Sword
@@ -1171,18 +1315,44 @@ SMODS.Consumable{ --Sword
     pos = {x = 3, y = 0},
 
     config = {
-        extra = 8
     },
 
     loc_vars = function (self, info_queue, card)
-    end,
-
-    use = function (self, card, area, copier)
         
     end,
 
-    can_use = function()
-        return true
+    use = function (self, card, area, copier)
+        local used_tarot = copier or card
+        if G.hand.highlighted[1].seal == 'Blue' then
+            G.E_MANAGER:add_event(Event({trigger = 'after',delay = 0.6,func = function()
+                play_sound('tarot1')
+                used_tarot:juice_up(0.3, 0.5)
+                G.hand.highlighted[1]:set_seal('ma_stellar_seal')
+            return true end }))
+        else
+            local adjacent_cards = {} --ищем в картах руки расположение выбранной нами карты и её соседей и добавляем их в массив
+            for i = 1, #G.hand.cards do
+                if G.hand.cards[i] == G.hand.highlighted[1] then 
+                        if G.hand.cards[i-1] then
+                            adjacent_cards[#adjacent_cards + 1] = G.hand.cards[i-1]
+                        end
+                        adjacent_cards[#adjacent_cards + 1] = G.hand.cards[i]
+                        if G.hand.cards[i+1] then
+                            adjacent_cards[#adjacent_cards + 1] = G.hand.cards[i+1]
+                        end
+                    break 
+                end
+            end
+            for i = 1, #adjacent_cards do
+                G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.4,func = function () used_tarot:juice_up(0.3, 0.5) play_sound('tarot1') adjacent_cards[i]:set_seal('Blue') return true end }))
+            end
+        end
+    end,
+
+    can_use = function(self, card)
+        if G.hand and #G.hand.highlighted == 1 then
+            return true
+        end
     end
 
 }
