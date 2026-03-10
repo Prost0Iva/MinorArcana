@@ -1248,18 +1248,24 @@ SMODS.Consumable{ --Wand
 }
 
 SMODS.Seal{ --Stellar Seal
-    key = 'stellar_seal',
+    key = 'stellar',
     atlas = 'ma_seal',
     pos = {x = 0, y = 0},
     config = {
         extra = 3
     },
+	badge_colour = G.C.BLUE,
+    loc_vars = function (self, info_queue, card)
+        return {vars = {
+            (G.GAME.probabilities.normal or 1),
+            self.config.extra
+        }}
+    end,
     calculate = function(self, card, context)
         if context.end_of_round and context.cardarea == G.hand and context.playing_card_end_of_round --ВОТ ТУТ МЫ ПИШЕМ КОНТЕКСТ
         then
             return { func = function() --Я ООООЧЕНЬ ДОЛГО НЕ ПОНИМАЛ, ПОЧЕМУ МИМ НЕ РАБОТАЕТ С МОЕЙ ПЕЧАТЬЮ, ТАК ВОТ, ДЕЛО В ТОМ, ЧТО, ЧТОБЫ ЧТОТО СЧИТАЛОСЬ ЭФФЕКТОМ КАРТЫ НАДО НЕ ПРОСТО ВЫЗЫВАТЬ, А ВОЗВРАЩАТЬ ФУНКЦИЮ И ЭТО КАЗАЛОСЬ БЫ ТАК ПРОСТО, НО Я НА ПОНИМАНИЕ ЭТОГО ПОТРАТИЛ 2 ДНЯ............ я устал..... я даже за это деег не получу.... а ещё это никто не прочитает.. я пошёл плакать
-                card_eval_status_text(card, 'extra', nil, nil, nil, {message = localize('k_plus_planet'), colour = G.C.SECONDARY_SET.Planet})
-                G.E_MANAGER:add_event(Event({ trigger = 'after', delay = 0.0, func = (function()
+                G.E_MANAGER:add_event(Event({ trigger = 'before', delay = 0.0, func = (function()
                     if #G.consumeables.cards + G.GAME.consumeable_buffer < G.consumeables.config.card_limit then --в конце раунда создает карту планеты последней сыграной руки
                         if G.GAME.last_hand_played then
                             local planet = nil
@@ -1273,8 +1279,6 @@ SMODS.Seal{ --Stellar Seal
                             G.consumeables:emplace(planet_card)
                         end
                     end
-                return true end)}))
-                G.E_MANAGER:add_event(Event({ trigger = 'before', delay = 0, func = (function()
                     if pseudorandom('stellar') < G.GAME.probabilities.normal / self.config.extra then
                         if G.GAME.last_hand_played then
                             local planet = nil
@@ -1289,7 +1293,9 @@ SMODS.Seal{ --Stellar Seal
                             G.consumeables:emplace(add_planet_card)
                         end
                     end
-            return true end)})) end }
+                    return true end)}))
+                card_eval_status_text(card, 'extra', nil, nil, nil, {message = localize('k_plus_planet'), colour = G.C.SECONDARY_SET.Planet})
+            end }
         end
     end,
 }
@@ -1327,7 +1333,7 @@ SMODS.Consumable{ --Sword
             G.E_MANAGER:add_event(Event({trigger = 'after',delay = 0.6,func = function()
                 play_sound('tarot1')
                 used_tarot:juice_up(0.3, 0.5)
-                G.hand.highlighted[1]:set_seal('ma_stellar_seal')
+                G.hand.highlighted[1]:set_seal('ma_stellar')
             return true end }))
         else
             local adjacent_cards = {} --ищем в картах руки расположение выбранной нами карты и её соседей и добавляем их в массив

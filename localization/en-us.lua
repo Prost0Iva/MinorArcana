@@ -1,4 +1,9 @@
 return {
+	misc = {
+		labels = {
+			ma_stellar_seal = "Stellar Seal"
+		}
+	},
 	descriptions = {
 		Tarot = {
 			c_ma_acecup = {
@@ -116,6 +121,20 @@ return {
 					"{C:attention}face{} cards to {C:attention}Steel Cards{}",
 					"other selected cards to {C:attention}Wild Cards"
 				},
+			},
+			
+		},
+		Other = {
+			ma_stellar_seal = {
+                name="Stellar Seal",
+                text={
+                    "Creates the {C:planet}Planet{} card",
+                    "for final played {C:attention}poker hand{}",
+                    "of round if {C:attention}held{} in hand",
+					"{C:green}#1# in #2#{} chance to create",
+					"{C:dark_edition}Negative{} copy of this planet",
+                    "{C:inactive}(Must have room)"
+                },
 			}
 		}
 	}
