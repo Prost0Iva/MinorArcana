@@ -34,7 +34,7 @@ local upd = Game.update
 function Game:update(dt) --Хук на выполнение каждый игровой кадр
     --Ниже идёт подсчёт полученных игроком тегов в партии, иных способ это посчитать я не придумал, 
     --но мне кажется они есть, и я сделал крайне не оптимизированно :/
-    if G.GAME.old_tags_num < #G.GAME.tags then --
+    if G.GAME.old_tags_num < #G.GAME.tags then
         G.GAME.tags_num = G.GAME.tags_num + #G.GAME.tags - G.GAME.old_tags_num
         G.GAME.old_tags_num = #G.GAME.tags
     end
@@ -106,7 +106,15 @@ SMODS.Consumable{ --Page of Cups
     end,
 
     use = function (self, card, area, copier)
-        ease_dollars(math.min(G.GAME.tags_num * card.ability.extra.dollar_per_tag, self.config.max_dollar), true)
+        local used_tarot = copier or card
+        G.E_MANAGER:add_event(Event({
+            trigger = 'before',
+            delay = 0.6,
+            func = (function()
+                used_tarot:juice_up(0.3, 0.5)
+                ease_dollars(math.min(G.GAME.tags_num * card.ability.extra.dollar_per_tag, self.config.max_dollar), true)
+            return true
+        end)}))
     end,
     
     can_use = function (self, card)
@@ -137,14 +145,14 @@ SMODS.Consumable{ --Knight of Cups
     use = function (self, card, area, copier)
     local used_tarot = copier or card
         if pseudorandom('knightcup') < G.GAME.probabilities.normal / card.ability.extra then --срабатывание шанса 1 к 3
-            local what_tag = math.random(3) --рандомный выбор тэга
-            if what_tag == 1 then
+            local what_tag = pseudorandom('knightcup') --рандомный выбор тэга
+            if what_tag < 0.33 then
                 add_tag(Tag('tag_foil'))
             end
-            if what_tag == 2 then
+            if 0.33 <= what_tag and what_tag < 0.66 then
                 add_tag(Tag('tag_holo'))
             end
-            if what_tag == 3 then
+            if 0.66 <= what_tag and what_tag <= 1 then
                 add_tag(Tag('tag_polychrome'))
             end
         else
@@ -188,14 +196,14 @@ SMODS.Consumable{ --Queen of Cups
     end,
 
     use = function (self, card, area, copier)
-        local what_tag = math.random(3)
-        if what_tag == 1 then
+        local what_tag = pseudorandom('queencup')
+        if what_tag < 0.33 then
             add_tag(Tag('tag_charm'))
         end
-        if what_tag == 2 then
+        if 0.33 <= what_tag and what_tag < 0.66 then
             add_tag(Tag('tag_meteor'))
         end
-        if what_tag == 3 then
+        if 0.66 <= what_tag and what_tag <= 1 then
             add_tag(Tag('tag_ethereal'))
         end
     end,
@@ -340,20 +348,20 @@ SMODS.Consumable{ --Knight of Pentacles
     pos = {x = 2, y = 1},
 
     use = function (self, card, area, copier)
-        local what_tag = math.random(5)
-        if what_tag == 1 then
+        local what_tag = pseudorandom('knightpen')
+        if what_tag < .2 then
             add_tag(Tag('tag_investment'))
         end
-        if what_tag == 2 then
+        if .2 <= what_tag and what_tag < .4 then
             add_tag(Tag('tag_handy'))
         end
-        if what_tag == 3 then
+        if .4 <= what_tag and what_tag < .6 then
             add_tag(Tag('tag_garbage'))
         end
-        if what_tag == 4 then
+        if .6 <= what_tag and what_tag < .8 then
             add_tag(Tag('tag_economy'))
         end
-        if what_tag == 5 then
+        if .8 <= what_tag and what_tag <= 1 then
             add_tag(Tag('tag_skip'))
         end
     end,
@@ -470,7 +478,6 @@ SMODS.Consumable{ --Ace of Wands
             G.E_MANAGER:add_event(Event({trigger = 'after',delay = 0.15,func = function() G.hand.highlighted[i]:flip();play_sound('card1', percent);G.hand.highlighted[i]:juice_up(0.3, 0.3);return true end }))
         end
         G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.2,func = function() G.hand:unhighlight_all(); return true end })) --делаем все карты в руке не выделенными
-        delay(0.5)
     end,
 
     can_use = function(self, card)
@@ -541,6 +548,7 @@ SMODS.Consumable{ --Page of Wands
                     used_tarot:juice_up(0.3, 0.5)
             return true end }))
         end
+        G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.2,func = function() G.hand:unhighlight_all(); return true end }))
     end,
 
     can_use = function(self, card)
@@ -659,6 +667,7 @@ SMODS.Consumable{ --Queen of Wands
         for i=1, #G.hand.highlighted do
                 G.E_MANAGER:add_event(Event({trigger = 'after',delay = 0.15,func = function() G.hand.highlighted[i]:flip();play_sound('card1', percent);G.hand.highlighted[i]:juice_up(0.3, 0.3);return true end }))
         end
+        G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.2,func = function() G.hand:unhighlight_all(); return true end }))
     end,
 
     can_use = function(self, card)
@@ -704,6 +713,7 @@ SMODS.Consumable{ --King of Wands
         for i=1, #G.hand.highlighted do
                 G.E_MANAGER:add_event(Event({trigger = 'after',delay = 0.15,func = function() G.hand.highlighted[i]:flip();play_sound('card1', percent);G.hand.highlighted[i]:juice_up(0.3, 0.3);return true end }))
         end
+        G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.2,func = function() G.hand:unhighlight_all(); return true end }))
     end,
 
     can_use = function(self, card)
@@ -733,7 +743,7 @@ SMODS.Consumable{ --Ace of Swords
     use = function (self, card, area, copier)
         local now_hand, planet, smallest = nil, nil, 999999 --перебираем все руки и ищем наименее часто использованную
                                                             --(как показали тесты: если рук не разыгрывалось вообще, то даёт карты старшей карты,
-                                                            --а если развгранное количество одинаковое - той что разыгрывалась последний раз)
+                                                            --а если разыгранное количество одинаковое - той что разыгрывалась последний раз)
         for k, v in ipairs(G.handlist) do
             if G.GAME.hands[v].visible and G.GAME.hands[v].played < smallest and G.GAME.hands[v].played ~= 0 then
                 now_hand = v
@@ -914,8 +924,7 @@ SMODS.Consumable{ --Queen of Swords
 
     config = {
         extra = {
-            chance_up = 3,
-            chance_down = 4,
+            chance = 4,
             lvl = 2
         }
     },
@@ -924,7 +933,8 @@ SMODS.Consumable{ --Queen of Swords
     end,
 
     use = function (self, card, area, copier)
-        if pseudorandom('queensword') < card.ability.extra.chance_up / card.ability.extra.chance_down then --Перебираем все руки и берём рандомную, ур которой больше 2
+        local used_tarot = copier or card
+        if pseudorandom('queensword') < G.GAME.probabilities.normal*3 / card.ability.extra.chance then --Перебираем все руки и берём рандомную, ур которой больше 2
             local hand = nil                                                                               --Далее с помощью функции SMODS.smart_level_up_hand уменьшаем уровень этой руки
             for k, v in ipairs(G.handlist) do                                                              --На самом деле я хотел сделать так, чтобы ур руки мог быть отрицательным, но код игры не позволяет уменьшить ур уже отрицательной руки :(
                 if G.GAME.hands[v].visible and G.GAME.hands[v].level > 2 and pseudorandom('downhand') > .4 then
@@ -938,7 +948,6 @@ SMODS.Consumable{ --Queen of Swords
                 SMODS.smart_level_up_hand(card, hand, false, -(card.ability.extra.lvl))
             end
         else
-            local used_tarot = copier or card
             G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.4, func = function()
                 attention_text({
                     text = localize('k_nope_ex'),
@@ -991,6 +1000,7 @@ SMODS.Consumable{ --King of Swords
     end,
 
     use = function (self, card, area, copier)
+        local used_tarot = copier or card
         if pseudorandom('kingsword') < G.GAME.probabilities.normal / card.ability.extra.chanse then --Тут мы просто выдаем с шансом черную дыру и с другим шансом создаем её негативную копию
             G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.4, func = function()
                 if G.consumeables.config.card_limit > #G.consumeables.cards then
@@ -1014,7 +1024,6 @@ SMODS.Consumable{ --King of Swords
                 delay(0.6)
             end
         else
-            local used_tarot = copier or card
             G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.4, func = function()
                 attention_text({
                     text = localize('k_nope_ex'),
@@ -1237,6 +1246,7 @@ SMODS.Consumable{ --Wand
                 end
             return true end }))
         end
+        G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.2,func = function() G.hand:unhighlight_all(); return true end }))
     end,
 
     can_use = function()
@@ -1262,11 +1272,14 @@ SMODS.Seal{ --Stellar Seal
         }}
     end,
     calculate = function(self, card, context)
+        --if context.final_scoring_step and context.cardarea == G.hand --ВОТ ТУТ МЫ ПИШЕМ КОНТЕКСТ
         if context.end_of_round and context.cardarea == G.hand and context.playing_card_end_of_round --ВОТ ТУТ МЫ ПИШЕМ КОНТЕКСТ
         then
             return { func = function() --Я ООООЧЕНЬ ДОЛГО НЕ ПОНИМАЛ, ПОЧЕМУ МИМ НЕ РАБОТАЕТ С МОЕЙ ПЕЧАТЬЮ, ТАК ВОТ, ДЕЛО В ТОМ, ЧТО, ЧТОБЫ ЧТОТО СЧИТАЛОСЬ ЭФФЕКТОМ КАРТЫ НАДО НЕ ПРОСТО ВЫЗЫВАТЬ, А ВОЗВРАЩАТЬ ФУНКЦИЮ И ЭТО КАЗАЛОСЬ БЫ ТАК ПРОСТО, НО Я НА ПОНИМАНИЕ ЭТОГО ПОТРАТИЛ 2 ДНЯ............ я устал..... я даже за это деег не получу.... а ещё это никто не прочитает.. я пошёл плакать
+                local rng = pseudorandom('stellar')
                 G.E_MANAGER:add_event(Event({ trigger = 'before', delay = 0.0, func = (function()
                     if #G.consumeables.cards + G.GAME.consumeable_buffer < G.consumeables.config.card_limit then --в конце раунда создает карту планеты последней сыграной руки
+                        G.GAME.consumeable_buffer = G.GAME.consumeable_buffer + 1
                         if G.GAME.last_hand_played then
                             local planet = nil
                             for k, v in pairs(G.P_CENTER_POOLS.Planet) do
@@ -1277,9 +1290,10 @@ SMODS.Seal{ --Stellar Seal
                             local planet_card = create_card('Planet', G.consumeables, nil, nil, nil, nil, planet)
                             planet_card:add_to_deck()
                             G.consumeables:emplace(planet_card)
+                            G.GAME.consumeable_buffer = 0
                         end
                     end
-                    if pseudorandom('stellar') < G.GAME.probabilities.normal / self.config.extra then
+                    if rng < G.GAME.probabilities.normal / self.config.extra then
                         if G.GAME.last_hand_played then
                             local planet = nil
                             for k, v in pairs(G.P_CENTER_POOLS.Planet) do
@@ -1293,8 +1307,10 @@ SMODS.Seal{ --Stellar Seal
                             G.consumeables:emplace(add_planet_card)
                         end
                     end
-                    return true end)}))
-                card_eval_status_text(card, 'extra', nil, nil, nil, {message = localize('k_plus_planet'), colour = G.C.SECONDARY_SET.Planet})
+                return true end)}))
+                if (#G.consumeables.cards + G.GAME.consumeable_buffer < G.consumeables.config.card_limit) or (rng < G.GAME.probabilities.normal / self.config.extra) then
+                    card_eval_status_text(card, 'extra', nil, nil, nil, {message = localize('k_plus_planet'), colour = G.C.SECONDARY_SET.Planet})
+                end
             end }
         end
     end,
@@ -1321,6 +1337,7 @@ SMODS.Consumable{ --Sword
     pos = {x = 3, y = 0},
 
     config = {
+        extra = 1
     },
 
     loc_vars = function (self, info_queue, card)
@@ -1329,6 +1346,40 @@ SMODS.Consumable{ --Sword
 
     use = function (self, card, area, copier)
         local used_tarot = copier or card
+
+        update_hand_text({sound = 'button', volume = 0.7, pitch = 0.8, delay = 0.3}, {handname=localize('k_all_hands'),chips = '...', mult = '...', level=''})
+        G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.2, func = function()
+            play_sound('tarot1')
+            used_tarot:juice_up(0.8, 0.5)
+            G.TAROT_INTERRUPT_PULSE = true
+            return true end }))
+        update_hand_text({delay = 0}, {mult = '-', StatusText = true})
+        G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.9, func = function()
+            play_sound('tarot1')
+            used_tarot:juice_up(0.8, 0.5)
+            return true end }))
+        update_hand_text({delay = 0}, {chips = '-', StatusText = true})
+        G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.9, func = function()
+            play_sound('tarot1')
+            used_tarot:juice_up(0.8, 0.5)
+            G.TAROT_INTERRUPT_PULSE = nil
+            return true end }))
+        update_hand_text({sound = 'button', volume = 0.7, pitch = 0.9, delay = 0}, {level='-1'})
+        delay(1.3)
+        local to_level_down = {}
+        for k, v in ipairs(G.handlist) do
+            sendInfoMessage("РУКИ ПЕРЕБИРАЮТЬСЯ")
+            if G.GAME.hands[v].level > 1 then
+                sendInfoMessage("РУКА ДОБАВИЛАСЬ")
+                to_level_down[#to_level_down + 1] = v
+            end
+        end
+        for k, v in ipairs(to_level_down) do
+            SMODS.smart_level_up_hand(card, v, true, -(card.ability.extra))
+            sendInfoMessage("УРОВЕНЬ РУКИ УМЕНЬШИЛСЯ ПО ИДЕИ")
+        end
+        update_hand_text({sound = 'button', volume = 0.7, pitch = 1.1, delay = 0}, {mult = 0, chips = 0, handname = '', level = ''})
+
         if G.hand.highlighted[1].seal == 'Blue' then
             G.E_MANAGER:add_event(Event({trigger = 'after',delay = 0.6,func = function()
                 play_sound('tarot1')
