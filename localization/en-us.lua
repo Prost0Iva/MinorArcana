@@ -122,6 +122,14 @@ return {
 					"other selected cards to {C:attention}Wild Cards"
 				},
 			},
+			c_ma_acesword = {
+				name = "Ace of Swords",
+				text = {
+					"Enhances {C:attention}#1#{} selected",
+					"{C:attention}face{} cards to {C:attention}Steel Cards{}",
+					"other selected cards to {C:attention}Wild Cards"
+				},
+			}
 			
 		},
 		Other = {

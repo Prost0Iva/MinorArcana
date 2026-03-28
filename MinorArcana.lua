@@ -738,6 +738,36 @@ SMODS.Consumable{ --Ace of Swords
     },
 
     loc_vars = function (self, info_queue, card)
+        local now_hand, planet, smallest = nil, nil, 999999
+        for k, v in ipairs(G.handlist) do
+            if G.GAME.hands[v].visible and G.GAME.hands[v].played < smallest and G.GAME.hands[v].played ~= 0 then
+                now_hand = v
+                smallest = G.GAME.hands[v].played
+            end
+        end
+        if now_hand then
+            for k, v in pairs(G.P_CENTER_POOLS.Planet) do
+                if v.config.hand_type == now_hand then
+                    planet = v
+                end
+            end
+        end
+        local smallest_planet = planet and localize{type = 'name_text', key = planet.key, set = planet.set} or localize('k_none')
+        local colour = not planet and G.C.RED or G.C.GREEN
+        local main_end = { --Таблицу "Описания после" взял у дурака
+            {n=G.UIT.C, config={align = "bm", padding = 0.02}, nodes={
+                {n=G.UIT.C, config={align = "m", colour = colour, r = 0.05, padding = 0.05}, nodes={
+                    {n=G.UIT.T, config={text = ' '..smallest_planet..' ', colour = G.C.UI.TEXT_LIGHT, scale = 0.3, shadow = true}},
+                }}
+            }}
+        }
+        info_queue[#info_queue+1] = planet;
+        return {
+            vars = {
+                card.ability.extra
+                },
+			main_end = main_end --Вот так надо добавлять особое описание после основного
+        }
     end,
 
     use = function (self, card, area, copier)
