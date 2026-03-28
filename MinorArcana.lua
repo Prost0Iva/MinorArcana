@@ -13,6 +13,7 @@
 ------------------------------
 --Инициализация файлов текстур
 ------------------------------
+SMODS.Atlas({key = 'modicon', path = 'Icon.png', px = 32, py = 32})
 SMODS.Atlas({key = 'ma_tarot', path = 'Tarot.png', px = 71, py = 95})
 SMODS.Atlas({key = 'ma_spectral', path = 'Spectral.png', px = 71, py = 95})
 SMODS.Atlas({key = 'ma_seal', path = 'Seal.png', px = 71, py = 95})

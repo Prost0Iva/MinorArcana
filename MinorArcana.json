@@ -2,6 +2,7 @@
 	"id": "MinorArcana",
 	"name": "MinorArcana",
 	"display_name": "MinorArcana",
+	"badge_colour": "A782D1",
 	"author": ["Iva"],
 	"description": "Mod for Balatro that adds tarot cards of minor arcana",
 	"prefix": "ma",
