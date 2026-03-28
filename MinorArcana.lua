@@ -822,6 +822,36 @@ SMODS.Consumable{ --Page of Swords
     },
 
     loc_vars = function (self, info_queue, card)
+        local now_hand, planet, biggest = nil, nil, 0 --Ищем наиболее часто играемую руку и даем её столько раз, сколько кард уничтожили
+        for k, v in ipairs(G.handlist) do
+            if G.GAME.hands[v].visible and G.GAME.hands[v].played > biggest and G.GAME.hands[v].played ~= 0 then
+                now_hand = v
+                biggest = G.GAME.hands[v].played
+            end
+        end
+        if now_hand then
+            for k, v in pairs(G.P_CENTER_POOLS.Planet) do
+                if v.config.hand_type == now_hand then
+                    planet = v
+                end
+            end
+        end
+        local most_planet = planet and localize{type = 'name_text', key = planet.key, set = planet.set} or localize('k_none')
+        local colour = not planet and G.C.RED or G.C.GREEN
+        local main_end = {
+            {n=G.UIT.C, config={align = "bm", padding = 0.02}, nodes={
+                {n=G.UIT.C, config={align = "m", colour = colour, r = 0.05, padding = 0.05}, nodes={
+                    {n=G.UIT.T, config={text = ' '..most_planet..' ', colour = G.C.UI.TEXT_LIGHT, scale = 0.3, shadow = true}},
+                }}
+            }}
+        }
+        info_queue[#info_queue+1] = planet;
+        return {
+            vars = {
+                card.ability.extra
+                },
+			main_end = main_end
+        }
     end,
 
     use = function (self, card, area, copier)
@@ -890,6 +920,23 @@ SMODS.Consumable{ --Knight of Swords
     },
 
     loc_vars = function (self, info_queue, card)
+        local sold_planet = G.GAME.last_sold_planet and localize{type = 'name_text', key = G.P_CENTERS[G.GAME.last_sold_planet].key, set = G.P_CENTERS[G.GAME.last_sold_planet].set} or localize('k_none')
+        local colour = not G.GAME.last_sold_planet and G.C.RED or G.C.GREEN
+        local main_end = {
+            {n=G.UIT.C, config={align = "bm", padding = 0.02}, nodes={
+                {n=G.UIT.C, config={align = "m", colour = colour, r = 0.05, padding = 0.05}, nodes={
+                    {n=G.UIT.T, config={text = ' '..sold_planet..' ', colour = G.C.UI.TEXT_LIGHT, scale = 0.3, shadow = true}},
+                }}
+            }}
+        }
+        info_queue[#info_queue+1] = G.P_CENTERS[G.GAME.last_sold_planet];
+        return {
+            vars = {
+                G.GAME.probabilities.normal,
+                card.ability.extra
+                },
+			main_end = main_end
+        }
     end,
 
     use = function (self, card, area, copier)
@@ -960,6 +1007,14 @@ SMODS.Consumable{ --Queen of Swords
     },
 
     loc_vars = function (self, info_queue, card)
+        info_queue[#info_queue+1] = G.P_CENTERS.j_space;
+        return {
+            vars = {
+                G.GAME.probabilities.normal,
+                card.ability.extra.chance,
+                card.ability.extra.lvl
+                }
+        }
     end,
 
     use = function (self, card, area, copier)
@@ -1021,17 +1076,25 @@ SMODS.Consumable{ --King of Swords
 
     config = {
         extra = {
-            chanse = 5,
-            chanse_add = 3
+            chance = 5,
+            chance_add = 3
         }
     },
 
     loc_vars = function (self, info_queue, card)
+        info_queue[#info_queue+1] = G.P_CENTERS.c_black_hole;
+        return {
+            vars = {
+                G.GAME.probabilities.normal,
+                card.ability.extra.chance,
+                card.ability.extra.chance_add
+                }
+        }
     end,
 
     use = function (self, card, area, copier)
         local used_tarot = copier or card
-        if pseudorandom('kingsword') < G.GAME.probabilities.normal / card.ability.extra.chanse then --Тут мы просто выдаем с шансом черную дыру и с другим шансом создаем её негативную копию
+        if pseudorandom('kingsword') < G.GAME.probabilities.normal / card.ability.extra.chance then --Тут мы просто выдаем с шансом черную дыру и с другим шансом создаем её негативную копию
             G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.4, func = function()
                 if G.consumeables.config.card_limit > #G.consumeables.cards then
                     play_sound('timpani')
@@ -1042,7 +1105,7 @@ SMODS.Consumable{ --King of Swords
                 end
                 return true end }))
             delay(0.6)
-            if pseudorandom('kingswordadd') < G.GAME.probabilities.normal / card.ability.extra.chanse_add then
+            if pseudorandom('kingswordadd') < G.GAME.probabilities.normal / card.ability.extra.chance_add then
                 G.E_MANAGER:add_event(Event({trigger = 'after', delay = 0.4, func = function()
                     play_sound('timpani')
                     local black_hole_card = create_card('Spectral', G.consumeables, nil, nil, nil, nil, "c_black_hole")
@@ -1104,6 +1167,11 @@ SMODS.Consumable{ --Cup
     },
 
     loc_vars = function (self, info_queue, card)
+        return {
+            vars = {
+                card.ability.extra
+                }
+        }
     end,
 
     use = function (self, card, area, copier)
@@ -1168,7 +1236,12 @@ SMODS.Consumable{ --Pentacle
     },
 
     loc_vars = function (self, info_queue, card)
-        
+        return {
+            vars = {
+                card.ability.extra.per_vouch,
+                card.ability.extra.per_lvl
+                }
+        }
     end,
 
 
@@ -1229,6 +1302,12 @@ SMODS.Consumable{ --Wand
     },
 
     loc_vars = function (self, info_queue, card)
+        return {
+            vars = {
+                G.GAME.probabilities.normal,
+                card.ability.extra
+            }
+        }
     end,
 
     use = function (self, card, area, copier)
@@ -1371,7 +1450,13 @@ SMODS.Consumable{ --Sword
     },
 
     loc_vars = function (self, info_queue, card)
-        
+        info_queue[#info_queue+1] = G.P_SEALS.Blue
+        info_queue[#info_queue+1] = G.P_SEALS.ma_stellar
+        return {
+            vars = {
+                card.ability.extra
+            }
+        }
     end,
 
     use = function (self, card, area, copier)
@@ -1396,17 +1481,14 @@ SMODS.Consumable{ --Sword
             return true end }))
         update_hand_text({sound = 'button', volume = 0.7, pitch = 0.9, delay = 0}, {level='-1'})
         delay(1.3)
-        local to_level_down = {}
+        local to_level_down = {} --Понижение уровня всех покерных рук
         for k, v in ipairs(G.handlist) do
-            sendInfoMessage("РУКИ ПЕРЕБИРАЮТЬСЯ")
             if G.GAME.hands[v].level > 1 then
-                sendInfoMessage("РУКА ДОБАВИЛАСЬ")
                 to_level_down[#to_level_down + 1] = v
             end
         end
         for k, v in ipairs(to_level_down) do
             SMODS.smart_level_up_hand(card, v, true, -(card.ability.extra))
-            sendInfoMessage("УРОВЕНЬ РУКИ УМЕНЬШИЛСЯ ПО ИДЕИ")
         end
         update_hand_text({sound = 'button', volume = 0.7, pitch = 1.1, delay = 0}, {mult = 0, chips = 0, handname = '', level = ''})
 

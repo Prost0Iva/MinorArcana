@@ -125,22 +125,117 @@ return {
 			c_ma_acesword = {
 				name = "Ace of Swords",
 				text = {
-					"Enhances {C:attention}#1#{} selected",
-					"{C:attention}face{} cards to {C:attention}Steel Cards{}",
-					"other selected cards to {C:attention}Wild Cards"
+					"Creates {C:attention}#1#{} {C:planet}Planet{} cards",
+					"of your least played",
+					"{C:attention}Poker Hand{}",
+                    "{C:inactive}(Must have room)"
+				},
+			},
+			c_ma_pagesword = {
+				name = "Page of Swords",
+				text = {
+					"Destroys {C:attention}#1#{} selected card",
+                    "Creates {C:planet}Planet{} card",
+					"of your most played",
+					"{C:attention}Poker Hand{}",
+                    "{C:inactive}(Must have room)"
+				},
+			},
+			c_ma_knightsword = {
+				name = "Knight of Swords",
+				text = {
+					"Creates last sold",
+					"{C:planet}Planet{} card",
+					"{C:green}#1# in #2#{} chance to",
+					"create another one",
+                    "{C:inactive}(Must have room)"
+				},
+			},
+			c_ma_queensword = {
+				name = "Queen of Swords",
+				text = {
+					"Creates a {C:dark_edition}Negative",
+					"{C:dark_edition}Perishable Space Joker",
+					"{C:green}#1# in #2#{} chance to",
+					"downgrade a random {C:attention}Poker Hand{}",
+					"by {C:attention}#3#{} levels"
+				},
+			},
+			c_ma_kingsword = {
+				name = "King of Swords",
+				text = {
+					"{C:green}#1# in #2#{} chance to",
+					"create a {C:spectral}Black Hole",
+					"{C:green}#1# in #3#{} chance to",
+					"create {C:dark_edition}Negative{} copy",
+                    "{C:inactive}(Must have room)"
 				},
 			}
 			
+		},
+		Spectral = {
+			c_ma_cup = {
+				name = "Cup",
+				text = {
+					"Creates #1# random {C:attention}tags",
+					"Destroys all {C:attention}consumables"
+				},
+                unlock={
+                    "Discover every",
+					"tarot card suit {E:1,C:tarot}Cups"
+                }
+			},
+			c_ma_pentacle = {
+				name = "Pentacle",
+				text = {
+					"Sets money to {C:money}$0",
+					"Gives {C:money}$#1#{} per your {C:attention}Voucher",
+                    "Gives {C:money}$#2#{} for each",
+					"level of your {C:attention}Poker Hand"
+				},
+                unlock={
+                    "Discover every",
+					"tarot card suit {E:1,C:tarot}Pentacles"
+                }
+			},
+			c_ma_wand = {
+				name = "Wand",
+				text = {
+					"Cards in hand",
+					"gain the {C:attention}enhancement{} of",
+					"{C:attention}1{} selected card",
+					"{C:green}#1# in #2#{} chance to",
+					"destroy a card in hand"
+				},
+                unlock={
+                    "Discover every",
+					"tarot card suit {E:1,C:tarot}Wands"
+                }
+			},
+			c_ma_sword = {
+				name = "Sword",
+				text = {
+					"Downgrade all {C:attention}Poker Hands{} by {C:attention}#1#{} level",
+					"Adds a {C:blue}Blue Seal{} to selected card",
+					"and adjacent cards",
+					"If selected card already has a {C:blue}Blue Seal{},",
+					"upgrade it to a {C:blue}Stellar Seal{}"
+				},
+                unlock={
+                    "Discover every",
+					"tarot card suit {E:1,C:tarot}Swords"
+                }
+			}
 		},
 		Other = {
 			ma_stellar_seal = {
                 name="Stellar Seal",
                 text={
                     "Creates the {C:planet}Planet{} card",
-                    "for final played {C:attention}poker hand{}",
+                    "for final played {C:attention}Poker Hand{}",
                     "of round if {C:attention}held{} in hand",
 					"{C:green}#1# in #2#{} chance to create",
-					"{C:dark_edition}Negative{} copy of this planet",
+					"{C:dark_edition}Negative{} copy of this {C:planet}planet",
                     "{C:inactive}(Must have room)"
                 },
 			}
